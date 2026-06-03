@@ -1,0 +1,255 @@
+:root {
+    --bg-color: #030014;
+    --primary-color: #00f0ff;
+    --secondary-color: #7000ff;
+    --text-main: #ffffff;
+    --text-muted: #8b949e;
+    --glass-bg: rgba(10, 10, 25, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+#canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    pointer-events: none; /* Let clicks pass through to 3D canvas by default */
+}
+
+header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 2rem 4rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: auto;
+}
+
+.logo {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+}
+
+.logo span {
+    color: var(--primary-color);
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+#instruction-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(3, 0, 20, 0.85);
+    backdrop-filter: blur(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.5s ease;
+    pointer-events: auto;
+    z-index: 100;
+}
+
+#instruction-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.instruction-content {
+    text-align: center;
+    max-width: 600px;
+    padding: 3rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
+}
+
+.instruction-content h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.instruction-content p {
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+#start-btn {
+    margin-top: 2rem;
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    background: linear-gradient(90deg, #00f0ff, #7000ff);
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(112, 0, 255, 0.4);
+}
+
+/* Info Panel Styling */
+#info-panel {
+    position: absolute;
+    right: 4rem;
+    top: 50%;
+    transform: translateY(-50%) translateX(0);
+    width: 450px;
+    max-height: 80vh;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    overflow-y: auto;
+    pointer-events: auto;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    opacity: 1;
+}
+
+#info-panel.hidden {
+    transform: translateY(-50%) translateX(120%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+#close-btn {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#close-btn:hover {
+    color: #fff;
+}
+
+#info-content h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-color);
+}
+
+#info-content h3 {
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+#info-content p {
+    line-height: 1.6;
+    color: #ccc;
+    margin-bottom: 1rem;
+}
+
+#info-content ul {
+    margin-left: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+#info-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+    color: #ccc;
+}
+
+.exp-item {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.exp-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.exp-role {
+    font-weight: 600;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.exp-meta {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    margin-top: 0.2rem;
+}
+
+/* Custom Scrollbar for Info Panel */
+#info-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+#info-panel::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+
+#info-panel::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+}
+
+#info-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.4);
+}
