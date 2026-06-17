@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divya B | AI Data Engineer 3D Portfolio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Import Maps for Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="error-log"
+        style="position: absolute; top: 10px; left: 10px; z-index: 9999; color: red; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 5px; font-family: monospace; display: none;">
+    </div>
+    <script>
+        window.onerror = function (msg, url, lineNo, columnNo, error) {
+            var log = document.getElementById('error-log');
+            log.style.display = 'block';
+            log.innerHTML += msg + ' (line ' + lineNo + ')<br>';
+            return false;
+        };
+    </script>
+    <div id="canvas-container"></div>
+
+    <!-- ═══ HERO OVERLAY ═══ -->
+    <div id="hero">
+        <canvas id="hero-canvas"></canvas>
+
+        <!-- Floating skill pills -->
+        <div class="hero-pills">
+            <span>Python</span><span>PySpark</span><span>LangChain</span>
+            <span>RAG</span><span>Snowflake</span><span>AWS</span>
+            <span>Databricks</span><span>Airflow</span><span>OpenAI</span>
+            <span>Azure</span><span>Delta Lake</span><span>Docker</span>
+            <span>LLMs</span><span>Terraform</span><span>Kafka</span>
+        </div>
+
+        <div id="hero-content">
+            <div id="hero-greeting">Hello, I'm</div>
+            <h1 id="hero-name"><span class="n1">D</span><span class="n2">i</span><span class="n3">v</span><span
+                    class="n4">y</span><span class="n5">a</span>&nbsp;<span class="n6">B</span><span
+                    class="ndot">.</span></h1>
+            <div id="hero-role-wrap">
+                <span id="hero-role-prefix">I build&nbsp;</span>
+                <span id="hero-role-text"></span><span id="hero-cursor">|</span>
+            </div>
+            <p id="hero-tagline">Designing production-grade AI &amp; Data platforms that turn raw bytes into business
+                outcomes.</p>
+
+            <div id="hero-stats">
+                <div class="h-stat"><span class="h-num" data-target="5">0</span><sup>+</sup>
+                    <div class="h-label">Years Exp.</div>
+                </div>
+                <div class="h-divider"></div>
+                <div class="h-stat"><span class="h-num" data-target="5">0</span>
+                    <div class="h-label">Companies</div>
+                </div>
+                <div class="h-divider"></div>
+                <div class="h-stat"><span class="h-num" data-target="4">0</span>
+                    <div class="h-label">Publications</div>
+                </div>
+                <div class="h-divider"></div>
+                <div class="h-stat"><span class="h-num" data-target="2">0</span>
+                    <div class="h-label">Cloud Platforms</div>
+                </div>
+            </div>
+
+            <button id="hero-cta" onclick="dismissHero()">Explore My Portfolio <svg width="18" height="18"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg></button>
+        </div>
+
+        <div id="hero-scroll-hint">scroll or click to explore</div>
+    </div>
+
+    <div id="ui-layer">
+        <header>
+            <div class="logo">Divya B<span>.</span></div>
+            <nav id="tab-nav">
+                <button class="tab-btn active" data-key="profile" id="tab-profile">👤 Profile</button>
+                <button class="tab-btn" data-key="skills" id="tab-skills">⚡ Skills</button>
+                <button class="tab-btn" data-key="experience" id="tab-experience">💼 Experience</button>
+                <button class="tab-btn" data-key="education" id="tab-education">🎓 Education</button>
+                <button class="tab-btn" data-key="certs" id="tab-certs">🏆 Certifications</button>
+                <button class="tab-btn" data-key="fun" id="tab-fun">✨ Fun Zone</button>
+            </nav>
+        </header>
+
+        <!-- Slide-up Panel -->
+        <div id="info-panel" class="hidden">
+            <div id="panel-header">
+                <div id="panel-tabs">
+                    <button class="panel-tab active" data-key="profile">👤 Profile</button>
+                    <button class="panel-tab" data-key="skills">⚡ Skills</button>
+                    <button class="panel-tab" data-key="experience">💼 Experience</button>
+                    <button class="panel-tab" data-key="education">🎓 Education</button>
+                    <button class="panel-tab" data-key="certs">🏆 Certifications</button>
+                    <button class="panel-tab" data-key="fun">✨ Fun Zone</button>
+                </div>
+                <button id="close-btn">&times;</button>
+            </div>
+            <div id="info-content"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        const resumeData = {
+            profile: {
+                title: "Profile Summary",
+                content: `AI Data Engineer and Data Solutions Engineer with 5+ years of experience designing, developing, and deploying scalable cloud-native data platforms, AI-driven solutions, and enterprise analytics systems across AWS and Azure environments. Expertise in Generative AI, Retrieval-Augmented Generation (RAG), Agentic AI architecture, Large Language Models (LLMs), Vector Databases, Machine Learning pipelines, and modern Data Engineering frameworks.<br><br>Proficient in building end-to-end data pipelines, ETL/ELT frameworks, real-time streaming solutions, and cloud-based analytics platforms using Python, PySpark, SQL, Spark, Databricks, Snowflake, Airflow, AWS, Azure, and Talend. Experienced in developing AI-powered applications leveraging LangChain, OpenAI APIs, vector search, prompt engineering, model evaluation, feature engineering, and MLOps best practices.<br><br>Strong background in data migration, cloud modernization, data warehousing, data governance, API development, microservices architecture, and enterprise-scale system integrations. Proven ability to collaborate with cross-functional stakeholders, translate complex business requirements into scalable technical solutions, and deliver production-grade AI and analytics platforms that improve operational efficiency, decision-making, and business outcomes.`,
+                contact: "data.engineer.ai.4866@gmail.com | +1(501) 291 2508 | Houston"
+            },
+            skills: {
+                title: "Technical Skills",
+                content: `
+            <ul>
+                <li><strong>Programming Languages:</strong> Python, SQL, PySpark, Spark SQL</li>
+                <li><strong>Generative AI & LLMs:</strong> OpenAI, LangChain, Retrieval-Augmented Generation (RAG), Agentic AI, Prompt Engineering, LLM Evaluation, NLP, Vector Search, Embedding Models, AI Workflows, Feature Engineering</li>
+                <li><strong>Data Engineering:</strong> Apache Spark, PySpark, Hadoop, HDFS, MapReduce, Sqoop, Databricks, Delta Lake, Apache Airflow, ETL/ELT Development, Data Modeling, Data Validation, Data Quality Frameworks</li>
+                <li><strong>Cloud Platforms:</strong> AWS (S3, Lambda, DynamoDB, Glue, Redshift, RDS PostgreSQL, DMS, IAM), Microsoft Azure (Azure Data Factory (ADF), Azure Data Lake Storage, Azure SQL Data Warehouse, Cosmos DB, Azure Active Directory (AAD), RBAC)</li>
+                <li><strong>Databases & Data Warehousing:</strong> Snowflake, PostgreSQL, SQL Server, MySQL, MongoDB, Redshift</li>
+                <li><strong>AI & Automation Exposure:</strong> AI-enabled workflows, Data-driven automation, Process optimization using analytics, AI-assisted analysis tools</li>
+                <li><strong>BI & Visualization:</strong> Tableau, Power BI</li>
+                <li><strong>Data Platforms:</strong> Snowflake, SQL Server, PostgreSQL</li>
+                <li><strong>ETL & Data Pipelines:</strong> SQL-based transformations, dbt, Apache Airflow, AWS Glue</li>
+                <li><strong>CRM & Systems:</strong> Salesforce</li>
+                <li><strong>Data Governance & Security:</strong> Data Governance, Data Masking, Encryption, Auditing, Metadata Management, Data Cataloging</li>
+                <li><strong>Professional Skills:</strong> Stakeholder Management, Requirements Gathering, Business Analysis, Agile, Scrum, Cross-Functional Collaboration, Technical Documentation</li>
+            </ul>
+        `
+            },
+            experience: [
+                {
+                    company: "Vanguard",
+                    role: "AI Data Engineer",
+                    duration: "Oct 2025 - Present",
+                    location: "Plano, TX",
+                    points: [
+                        "Designed and implemented scalable AI-powered data platforms on AWS using PySpark, Snowflake, S3, Lambda, DynamoDB, and Databricks to support enterprise analytics and intelligent automation initiatives.",
+                        "Developed Retrieval-Augmented Generation (RAG) pipelines leveraging LangChain, OpenAI APIs, vector embeddings, and enterprise knowledge repositories to improve contextual accuracy of AI-driven responses.",
+                        "Built and optimized large-scale data ingestion and transformation pipelines using PySpark and Spark, processing structured, semi-structured, and unstructured datasets for downstream AI and analytics applications.",
+                        "Implemented document preprocessing, chunking, metadata enrichment, and embedding generation workflows to support enterprise search and knowledge management solutions.",
+                        "Conducted LLM evaluation and benchmarking using historical support interactions, establishing quality metrics, hallucination detection frameworks, and response validation processes.",
+                        "Designed vector search architectures and semantic retrieval frameworks to improve relevance, precision, and response quality for AI-powered applications.",
+                        "Developed automated data quality validation, monitoring, and anomaly detection frameworks, improving reliability and trustworthiness of AI training and inference datasets.",
+                        "Built serverless data processing solutions using AWS Lambda, DynamoDB, and S3, reducing operational overhead and improving scalability of cloud-native applications.",
+                        "Led migration of legacy enterprise datasets from MongoDB to Snowflake, improving query performance, reporting efficiency, and data accessibility across business units.",
+                        "Executed large-scale SQL Server to Snowflake migration initiatives using Python, SnowSQL, and Fivetran, ensuring data consistency and minimal operational disruption.",
+                        "Led end-to-end migration from MSSQL to AWS RDS PostgreSQL using AWS Database Migration Service (DMS), optimizing database performance and reducing infrastructure costs.",
+                        "Designed and implemented microservices-based architectures using FastAPI and Flask to expose machine learning and analytics services through secure RESTful APIs.",
+                        "Developed APIs for demand forecasting, inventory optimization, and business intelligence use cases, enabling near real-time decision-making across operational teams.",
+                        "Collaborated with Data Scientists, MLOps Engineers, Product Owners, and Business Stakeholders to deploy production-grade AI and machine learning solutions aligned with business objectives.",
+                        "Automated CI/CD deployment workflows using Docker, Kubernetes, Terraform, and Git-based pipelines, improving deployment consistency and reducing release cycles.",
+                        "Monitored and optimized Spark workloads, Snowflake resource utilization, and AWS infrastructure costs through performance tuning and workload optimization techniques.",
+                        "Authored architecture diagrams, technical design documents, data lineage documentation, model evaluation reports, and operational runbooks to support governance and knowledge sharing."
+                    ]
+                },
+                {
+                    company: "Eleventh Avenue Exports & Imports LLC",
+                    role: "AI Data Engineer",
+                    duration: "Aug 2024 – Oct 2025",
+                    location: "",
+                    points: [
+                        "Implemented comprehensive data validation protocols and error-handling strategies to maintain data accuracy and security across multiple platforms, aligning with industry best practices for data integrity.",
+                        "Designed and built comprehensive end-to-end data pipelines using Azure Data Factory (ADF), orchestrating data movement and transformation across multiple sources to streamline data integration and processing.",
+                        "Managed and optimized data storage solutions with Azure SQL Data Warehouse, Cosmos DB, and Azure Data Lake, implementing best practices for data partitioning, indexing, and compression to enhance performance and scalability.",
+                        "Enforced data quality checks and governance policies, reducing data inconsistencies and compliance issues by 35% through proactive validation and automation frameworks.",
+                        "Implemented robust data security measures using Azure Active Directory (AAD) and Role-Based Access Control (RBAC) to manage identities and secure data access, ensuring compliance with organizational and regulatory standards.",
+                        "Implemented automated workflow orchestration and operational monitoring using Talend Administration Center, ensuring seamless scheduling and dependency management in Pilot enterprise data pipelines.",
+                        "Designed and maintained scalable cloud data pipelines using Talend Open Studio integrated with Snowflake, enabling efficient ingestion and transformation of large-scale enterprise datasets for analytics and reporting.",
+                        "developed and debugged complex ETL pipelines in Talend Open Studio, improving pipeline reliability and reducing data processing time through optimized transformations and parallel execution strategies.",
+                        "Ensured adherence to data governance policies by deploying data masking, encryption, and auditing solutions within Azure environments to protect sensitive information and maintain data integrity."
+                    ]
+                },
+                {
+                    company: "Sri Foods USA",
+                    role: "Data Engineer",
+                    duration: "Jan 2024 – Aug 2024",
+                    location: "",
+                    points: [
+                        "Analyzed logistics, vendor, and operational datasets using SQL to define and monitor KPIs, improving shipment SLA adherence and supporting cost optimization strategies.",
+                        "Performed trend, variance, and root-cause analysis on shipment volumes, vendor performance, and fulfillment timelines to identify bottlenecks and drive efficiency improvements.",
+                        "Designed and maintained Power BI executive dashboards for weekly and monthly business reviews, integrating shipment status, vendor compliance, and cost metrics.",
+                        "Collaborated with cross-functional stakeholders (operations, procurement, finance) to translate ambiguous business problems into structured KPIs, analytical models, and reporting solutions.",
+                        "Built and optimized ETL/ELT pipelines using SQL, Python, dbt, AWS S3, AWS Glue, and Apache Airflow, improving data reliability and reducing manual reporting effort.",
+                        "Implemented robust data cleaning, transformation, and validation frameworks, enhancing data accuracy and trust in executive reporting.",
+                        "Developed and maintained data documentation, including metric definitions and data dictionaries, improving data governance and discoverability.",
+                        "Wrote and optimized complex SQL queries using CTEs, window functions, joins, and date transformations for large-scale data analysis.",
+                        "Delivered forecasting and trend analysis to support demand planning, vendor cost optimization, and operational strategy.",
+                        "Synthesized complex datasets into clear, actionable insights and business narratives for senior leadership.",
+                        "Managed end-to-end analytics requests, from requirement gathering to delivery, ensuring alignment with stakeholder expectations and timelines.",
+                        "Monitored analytics request SLAs and turnaround times, identifying opportunities to improve delivery efficiency.",
+                        "Worked with semi-structured data formats (JSON/XML) for data ingestion and preprocessing."
+                    ]
+                },
+                {
+                    company: "Freshworks",
+                    role: "Big Data Engineer",
+                    duration: "Jun 2022 – Aug 2023",
+                    location: "India",
+                    points: [
+                        "Designed and developed large-scale ETL pipelines using PySpark, Python, SQL, Apache Spark, and Apache Airflow to process enterprise datasets for analytics and reporting.",
+                        "Built Databricks-based transformation workflows and optimized Spark jobs for handling high-volume batch processing workloads.",
+                        "Implemented Medallion Architecture patterns using layered data processing approaches for scalable and maintainable data engineering workflows.",
+                        "Applied Spark optimization techniques include partitioning, shuffle tuning, caching, broadcast joins, and skew mitigation to improve processing performance and resource utilization.",
+                        "Diagnosed and resolved Spark job failures through detailed log analysis, memory tuning, dependency optimization, and workload balance.",
+                        "Developed incremental load frameworks and idempotent processing logic to improve ETL reliability and reduce duplicate processing.",
+                        "Implemented robust data quality checks, validation rules, and reconciliation frameworks to ensure pipeline reliability and data accuracy.",
+                        "Configured ETL orchestration and dependency management using Apache Airflow, improving operational readiness and workflow monitoring.",
+                        "Integrated data from APIs, flat files, databases, and third-party vendor systems into centralized analytics environments.",
+                        "Worked with real-time and streaming data ingestion patterns supporting near real-time downstream consumption.",
+                        "Maintained detailed technical documentation for ETL workflows, transformation logic, operational processes, and pipeline dependencies.",
+                        "Participated in performance optimization and cost efficiency initiatives across compute and storage workloads."
+                    ]
+                },
+                {
+                    company: "HealthifyMe",
+                    role: "Data Engineer",
+                    duration: "Jan 2022 - Jun 2022",
+                    location: "India",
+                    points: [
+                        "Designed and developed Data Lakes, Data Warehouses, and Data Marts on AWS using S3, Redshift, and Glue, enabling enterprise-wide analytics and driving business value.",
+                        "Implemented real-time data synchronization using Talend ESB and Talend Real-Time Big Data, connecting Kafka streams and change data capture (CDC) from Oracle to downstream systems.",
+                        "Designed reusable Talend joblets and components (custom tMap logic, error handling routines, dynamic schema handling).",
+                        "Developed automated data preprocessing and feature engineering pipelines in Python, improving dataset usability for robotics perception, grasping, and manipulation models.",
+                        "Implemented semi-supervised and self-supervised data labeling workflows to significantly reduce manual annotation costs while maintaining high-quality training datasets for robotics ML models.",
+                        "Designed and implemented scalable data pipelines for multimodal robotics datasets (RGB vision, depth sensors, tactile signals, and force/torque telemetry), enabling efficient ingestion and processing of high-volume robot perception data.",
+                        "Built high-throughput data capture infrastructure to collect and stream real-time sensor data from robotic systems and simulation environments, supporting large-scale AI training pipelines.",
+                        "Built robust data versioning, metadata tracking, and dataset governance frameworks, ensuring reproducible ML experiments and consistent dataset management across robotics model training cycles."
+                    ]
+                }
+            ],
+            education: {
+                title: "Education",
+                content: `
+            <ul>
+                <li><strong>University of Texas at Arlington</strong>, Masters, Computer Science</li>
+                <li><strong>Bharat Institute of Engineering and Technology</strong>, Bachelor’s, Computer Science</li>
+            </ul>
+        `
+            },
+            fun: {
+                title: "Fun & About Me ✨",
+                content: `
+            <div class="fun-section">
+                <p>Welcome to the Fun Zone! While my professional life is all about data, AI pipelines, and cloud architectures, I'm also deeply passionate about continuous learning and exploring the creative side of technology.</p>
+                <p>When I'm not optimizing Spark workloads or building LLM agents, you might find me:</p>
+                <ul>
+                    <li>🕹️ Exploring the latest in 3D web technologies (like this portfolio!)</li>
+                    <li>📚 Reading sci-fi and tech blogs</li>
+                    <li>🌍 Traveling to discover new cultures</li>
+                </ul>
+                <div class="fun-interactive" id="fun-interactive-btn">Click me for a data burst!</div>
+            </div>
+        `
+            },
+            certs: {
+                title: "Certifications",
+                content: `
+            <ul class="cert-list">
+                <li>🏆 Databricks Data Engineer Associate certification</li>
+                <li>📄 Leveraging big data for disease surveillance and public health interventions (IJGIS JULY 2024) — PubPub</li>
+                <li>📄 Unlocking Healthcare Fraud Detection Using Innovations of Machine Learning Strategies (IDBA 2024) — Springer</li>
+                <li>📄 A Comprehensive Analysis of Cholera Disease Prediction Using Machine Learning (CIS 2024) — Springer</li>
+                <li>📄 AI-Enhanced U-Net for Accurate Low-Grade Glioma Segmentation in Brain MRI: Transforming Healthcare Imaging (ICEEICT) — IEEE</li>
+            </ul>
+        `
+            }
+        };
+
+        // Setup Scene, Camera, Renderer
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x030014, 0.002);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 50);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Post-processing (Bloom)
+        const renderScene = new RenderPass(scene, camera);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+        bloomPass.threshold = 0;
+        bloomPass.strength = 1.2;
+        bloomPass.radius = 0.5;
+
+        const composer = new EffectComposer(renderer);
+        composer.addPass(renderScene);
+        composer.addPass(bloomPass);
+
+        // Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 150;
+        controls.minDistance = 10;
+        controls.enablePan = false;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+
+        const pointLight1 = new THREE.PointLight(0x00f0ff, 2, 100);
+        pointLight1.position.set(20, 20, 20);
+        scene.add(pointLight1);
+
+        const pointLight2 = new THREE.PointLight(0x7000ff, 2, 100);
+        pointLight2.position.set(-20, -20, 20);
+        scene.add(pointLight2);
+
+        const pointLight3 = new THREE.PointLight(0xff00aa, 1, 100);
+        pointLight3.position.set(0, 10, -20);
+        scene.add(pointLight3);
+
+        // Data Particles (Background)
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 3000;
+        const posArray = new Float32Array(particlesCount * 3);
+        const colorArray = new Float32Array(particlesCount * 3);
+
+        for (let i = 0; i < particlesCount * 3; i += 3) {
+            posArray[i] = (Math.random() - 0.5) * 200;
+            posArray[i + 1] = (Math.random() - 0.5) * 200;
+            posArray[i + 2] = (Math.random() - 0.5) * 200;
+
+            // Mix colors for particles
+            const mix = Math.random();
+            if (mix < 0.33) {
+                colorArray[i] = 0.0; colorArray[i + 1] = 0.94; colorArray[i + 2] = 1.0; // 00f0ff
+            } else if (mix < 0.66) {
+                colorArray[i] = 0.44; colorArray[i + 1] = 0.0; colorArray[i + 2] = 1.0; // 7000ff
+            } else {
+                colorArray[i] = 1.0; colorArray[i + 1] = 0.0; colorArray[i + 2] = 0.66; // ff00aa
+            }
+        }
+
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.3,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // Mouse tracking
+        const mouse = new THREE.Vector2();
+        const targetMouse = new THREE.Vector2();
+
+        // Store original particle positions for repulsion
+        const originalPositions = new Float32Array(posArray);
+
+        // UI Elements
+        const infoPanel = document.getElementById('info-panel');
+        const infoContent = document.getElementById('info-content');
+        const closeBtn = document.getElementById('close-btn');
+        let activeKey = null;
+
+        // ---------- TAB NAV (header buttons) ----------
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = btn.dataset.key;
+
+                // Toggle: if same tab clicked while panel open, close it
+                if (!infoPanel.classList.contains('hidden') && activeKey === key) {
+                    infoPanel.classList.add('hidden');
+                    activeKey = null;
+                    document.querySelectorAll('.tab-btn, .panel-tab').forEach(b => b.classList.remove('active'));
+                    return;
+                }
+
+                activeKey = key;
+                openTab(key);
+            });
+        });
+
+        // ---------- PANEL INNER TABS ----------
+        document.querySelectorAll('.panel-tab').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const key = btn.dataset.key;
+                activeKey = key;
+                openTab(key);
+            });
+        });
+
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            infoPanel.classList.add('hidden');
+            activeKey = null;
+            document.querySelectorAll('.tab-btn, .panel-tab').forEach(b => b.classList.remove('active'));
+        });
+
+        function openTab(key) {
+            // Update active states everywhere
+            document.querySelectorAll('.tab-btn, .panel-tab').forEach(b => {
+                b.classList.toggle('active', b.dataset.key === key);
+            });
+
+            const data = resumeData[key];
+            renderContent(key, data);
+            infoPanel.classList.remove('hidden');
+        }
+
+        // Mouse movement — parallax + particle repulsion tracking
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            targetMouse.x = mouse.x;
+            targetMouse.y = mouse.y;
+        });
+
+        function renderContent(key, data) {
+            let html = '';
+
+            if (key === 'profile') {
+                html = `<h2>${data.title}</h2>
+                <p>${data.content}</p>
+                <p class="contact-bar">${data.contact}</p>`;
+            } else if (key === 'skills' || key === 'education' || key === 'fun') {
+                html = `<h2>${data.title}</h2>${data.content}`;
+            } else if (key === 'certs') {
+                html = `<h2>${data.title}</h2>${data.content}`;
+            } else if (key === 'experience') {
+                html = `<h2>Experience</h2>`;
+                data.forEach(exp => {
+                    html += `
+                <div class="exp-item">
+                    <div class="exp-role">${exp.role} @ ${exp.company}</div>
+                    <div class="exp-meta">${exp.duration} ${exp.location ? '| ' + exp.location : ''}</div>
+                    <ul>${exp.points.map(p => `<li>${p}</li>`).join('')}</ul>
+                </div>`;
+                });
+            } else {
+                html = `<h2>Error</h2><p>Unknown key: ${key}</p>`;
+            }
+
+            infoContent.innerHTML = html;
+            if (key === 'fun') setupFunInteractive();
+        }
+
+        function setupFunInteractive() {
+            const btn = document.getElementById('fun-interactive-btn');
+            if (!btn) return;
+
+            btn.addEventListener('click', () => {
+                btn.textContent = "Boom! 💥 Data Exploded!";
+                btn.style.background = "#ff00aa";
+
+                // Create a temporary particle burst in 3D
+                createBurst();
+
+                setTimeout(() => {
+                    btn.textContent = "Click me for a data burst!";
+                    btn.style.background = "linear-gradient(90deg, #00f0ff, #7000ff)";
+                }, 2000);
+            });
+        }
+
+        function createBurst() {
+            const burstGeo = new THREE.BufferGeometry();
+            const burstCount = 100;
+            const bPos = new Float32Array(burstCount * 3);
+            const vels = [];
+
+            for (let i = 0; i < burstCount * 3; i += 3) {
+                bPos[i] = (Math.random() - 0.5) * 5;
+                bPos[i + 1] = (Math.random() - 0.5) * 5;
+                bPos[i + 2] = (Math.random() - 0.5) * 5;
+
+                vels.push({
+                    x: (Math.random() - 0.5) * 2,
+                    y: (Math.random() - 0.5) * 2,
+                    z: (Math.random() - 0.5) * 2
+                });
+            }
+
+            burstGeo.setAttribute('position', new THREE.BufferAttribute(bPos, 3));
+            const burstMat = new THREE.PointsMaterial({
+                size: 0.5,
+                color: 0xffffff,
+                transparent: true,
+                opacity: 1,
+                blending: THREE.AdditiveBlending
+            });
+
+            const burstPoints = new THREE.Points(burstGeo, burstMat);
+            burstPoints.position.set(0, 5, -25); // Set to "fun" node position
+            scene.add(burstPoints);
+
+            let life = 1.0;
+            const animateBurst = () => {
+                life -= 0.02;
+                if (life <= 0) {
+                    scene.remove(burstPoints);
+                    burstGeo.dispose();
+                    burstMat.dispose();
+                    return;
+                }
+
+                const positions = burstPoints.geometry.attributes.position.array;
+                for (let i = 0; i < burstCount; i++) {
+                    positions[i * 3] += vels[i].x;
+                    positions[i * 3 + 1] += vels[i].y;
+                    positions[i * 3 + 2] += vels[i].z;
+                }
+                burstPoints.geometry.attributes.position.needsUpdate = true;
+                burstPoints.material.opacity = life;
+
+                requestAnimationFrame(animateBurst);
+            };
+            animateBurst();
+        }
+
+        // Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+        let mouseX = 0;
+        let mouseY = 0;
+        const REPULSION_RADIUS = 25;
+        const REPULSION_STRENGTH = 18;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            // Smooth mouse follow
+            mouseX += (targetMouse.x - mouseX) * 0.06;
+            mouseY += (targetMouse.y - mouseY) * 0.06;
+
+            // Subtle camera parallax
+            camera.position.x += (mouseX * 4 - camera.position.x) * 0.04;
+            camera.position.y += (-mouseY * 4 - camera.position.y) * 0.04;
+
+            // Mouse world position (project onto z=0 plane)
+            const mwx = mouseX * 60;
+            const mwy = mouseY * 60;
+
+            // Particle wave + mouse repulsion
+            const positions = particlesGeometry.attributes.position.array;
+            for (let i = 0; i < particlesCount; i++) {
+                const ix = i * 3, iy = i * 3 + 1;
+                const ox = originalPositions[ix];
+                const oy = originalPositions[iy];
+
+                // Gentle base wave
+                const wave = Math.sin(elapsedTime * 0.8 + ox * 0.05 + oy * 0.05) * 0.4;
+
+                // Distance from mouse
+                const dx = ox - mwx;
+                const dy = oy - mwy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                let fx = 0, fy = 0;
+                if (dist < REPULSION_RADIUS && dist > 0) {
+                    const force = (1 - dist / REPULSION_RADIUS) * REPULSION_STRENGTH;
+                    fx = (dx / dist) * force;
+                    fy = (dy / dist) * force;
+                }
+
+                // Lerp position toward (original + wave + repulsion)
+                positions[ix] += ((ox + fx) - positions[ix]) * 0.12;
+                positions[iy] += ((oy + wave + fy) - positions[iy]) * 0.12;
+            }
+            particlesGeometry.attributes.position.needsUpdate = true;
+
+            // Slow overall rotation
+            particlesMesh.rotation.y = elapsedTime * 0.015;
+
+            controls.update();
+            composer.render();
+        }
+
+        animate();
+
+    </script>
+
+    <!-- ═══ HERO SCRIPTS ═══ -->
+    <script>
+        (function () {
+            /* ── Aurora Canvas ── */
+            const hCanvas = document.getElementById('hero-canvas');
+            const hCtx = hCanvas.getContext('2d');
+
+            function resizeHero() {
+                hCanvas.width = window.innerWidth;
+                hCanvas.height = window.innerHeight;
+            }
+            resizeHero();
+            window.addEventListener('resize', resizeHero);
+
+            const blobs = [
+                { x: 0.15, y: 0.25, r: 0.45, hue: 195, speed: 0.0004 },
+                { x: 0.75, y: 0.15, r: 0.50, hue: 270, speed: 0.0003 },
+                { x: 0.55, y: 0.80, r: 0.42, hue: 330, speed: 0.0005 },
+                { x: 0.85, y: 0.65, r: 0.38, hue: 210, speed: 0.0006 },
+            ];
+
+            let heroT = 0;
+            function drawAurora() {
+                heroT++;
+                const W = hCanvas.width, H = hCanvas.height;
+                hCtx.clearRect(0, 0, W, H);
+
+                // Deep base
+                hCtx.fillStyle = '#030014';
+                hCtx.fillRect(0, 0, W, H);
+
+                // Grid overlay
+                hCtx.strokeStyle = 'rgba(0,240,255,0.04)';
+                hCtx.lineWidth = 1;
+                const gs = 60;
+                for (let x = 0; x < W; x += gs) { hCtx.beginPath(); hCtx.moveTo(x, 0); hCtx.lineTo(x, H); hCtx.stroke(); }
+                for (let y = 0; y < H; y += gs) { hCtx.beginPath(); hCtx.moveTo(0, y); hCtx.lineTo(W, y); hCtx.stroke(); }
+
+                // Animated aurora blobs
+                blobs.forEach(b => {
+                    const cx = (b.x + Math.sin(heroT * b.speed * 1000) * 0.12) * W;
+                    const cy = (b.y + Math.cos(heroT * b.speed * 800) * 0.10) * H;
+                    const rad = b.r * Math.min(W, H);
+
+                    const g = hCtx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+                    g.addColorStop(0, `hsla(${b.hue},100%,60%,0.18)`);
+                    g.addColorStop(0.5, `hsla(${b.hue + 30},100%,50%,0.08)`);
+                    g.addColorStop(1, `hsla(${b.hue},100%,40%,0)`);
+
+                    hCtx.beginPath();
+                    hCtx.arc(cx, cy, rad, 0, Math.PI * 2);
+                    hCtx.fillStyle = g;
+                    hCtx.fill();
+                });
+
+                requestAnimationFrame(drawAurora);
+            }
+            drawAurora();
+
+            /* ── Name letter reveal ── */
+            const letters = document.querySelectorAll('#hero-name span');
+            letters.forEach((l, i) => {
+                l.style.opacity = 0;
+                l.style.transform = 'translateY(30px)';
+                l.style.display = 'inline-block';
+                l.style.transition = `opacity 0.5s ease ${0.1 + i * 0.08}s, transform 0.5s ease ${0.1 + i * 0.08}s`;
+            });
+            setTimeout(() => {
+                letters.forEach(l => { l.style.opacity = 1; l.style.transform = 'translateY(0)'; });
+            }, 300);
+
+            /* ── Typewriter roles ── */
+            const roles = [
+                'AI-Powered Data Platforms',
+                'RAG & LLM Pipelines',
+                'Real-Time Data Streams',
+                'Cloud-Native Architectures',
+                'Scalable ETL/ELT Frameworks',
+            ];
+            const roleEl = document.getElementById('hero-role-text');
+            const cursorEl = document.getElementById('hero-cursor');
+            let ri = 0, ci = 0, deleting = false;
+
+            // Cursor blink
+            setInterval(() => { cursorEl.style.opacity = cursorEl.style.opacity === '0' ? '1' : '0'; }, 530);
+
+            function typeWriter() {
+                const cur = roles[ri];
+                if (!deleting) {
+                    roleEl.textContent = cur.slice(0, ++ci);
+                    if (ci === cur.length) { deleting = true; setTimeout(typeWriter, 1800); return; }
+                    setTimeout(typeWriter, 68);
+                } else {
+                    roleEl.textContent = cur.slice(0, --ci);
+                    if (ci === 0) { deleting = false; ri = (ri + 1) % roles.length; setTimeout(typeWriter, 400); return; }
+                    setTimeout(typeWriter, 38);
+                }
+            }
+            setTimeout(typeWriter, 900);
+
+            /* ── Stat counters ── */
+            function animateCounters() {
+                document.querySelectorAll('.h-num').forEach(el => {
+                    const target = +el.dataset.target;
+                    let cur = 0;
+                    const step = target / 40;
+                    const timer = setInterval(() => {
+                        cur = Math.min(cur + step, target);
+                        el.textContent = Math.round(cur);
+                        if (cur >= target) clearInterval(timer);
+                    }, 40);
+                });
+            }
+            setTimeout(animateCounters, 800);
+
+            /* ── Floating pills ── */
+            const pills = document.querySelectorAll('.hero-pills span');
+            pills.forEach(p => {
+                const x = 5 + Math.random() * 88;
+                const y = 5 + Math.random() * 88;
+                const delay = Math.random() * 4;
+                const duration = 6 + Math.random() * 6;
+                p.style.left = x + '%';
+                p.style.top = y + '%';
+                p.style.animationDelay = delay + 's';
+                p.style.animationDuration = duration + 's';
+            });
+
+            /* ── Dismiss on scroll ── */
+            let scrolled = false;
+            window.addEventListener('wheel', () => { if (!scrolled) { scrolled = true; dismissHero(); } }, { passive: true });
+
+            /* ── dismissHero global ── */
+            window.dismissHero = function () {
+                const hero = document.getElementById('hero');
+                hero.classList.add('hero-exit');
+                setTimeout(() => { hero.style.display = 'none'; }, 900);
+            };
+        })();
+    </script>
+</body>
+
+</html>
